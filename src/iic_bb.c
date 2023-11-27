@@ -85,6 +85,51 @@ void IIC_NAck(void)
     Delay_Us(IIC_WD);
 }
 
+u8 IIC_Send_Byte_Hold(u8 txd)
+{
+    u8 t;
+    u32 to = 500000;
+
+    IIC_SDA((txd&0x80)>>7);
+    Delay_Us(IIC_WD);
+
+    SCL_IN();
+
+    while(!READ_SCL){
+        Delay_Us(1);
+        to--;
+        if(to == 0){
+            SCL_OUT();
+            IIC_Stop();
+            return 1;
+        }
+    }
+
+    SCL_OUT();
+    Delay_Us(IIC_WD);
+    IIC_SCL(0);
+    Delay_Us(IIC_WD);
+
+    txd<<=1;
+
+    for(t=1;t<8;t++)
+    {
+        IIC_SDA((txd&0x80)>>7);
+        Delay_Us(IIC_WD);
+
+        IIC_SCL(1);
+        Delay_Us(IIC_WD);
+        IIC_SCL(0);
+        Delay_Us(IIC_WD);
+
+        txd<<=1;
+    }
+
+    IIC_SCL(0);
+    Delay_Us(IIC_WD);
+    return 0;
+}
+
 void IIC_Send_Byte(u8 txd)
 {
     u8 t;
@@ -109,7 +154,7 @@ void IIC_Send_Byte(u8 txd)
 
 u8 IIC_Read_Byte(void){
 
-    unsigned char i,receive=0;
+    u8 i, receive=0;
 
     SDA_IN();
 

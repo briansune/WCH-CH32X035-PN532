@@ -136,11 +136,12 @@
 
 void nfc_init(void);
 
+u8 send_hold(u8 data);
 u8 send(u8 data);
 u8 read_ack(void);
 void read_dt(u8 *buf, u8 len);
-u8 wait_ready(u8 ms);
-void write_cmd(u8 *cmd, u8 len);
+
+u8 write_cmd(u8 *cmd, u8 len);
 u8 write_cmd_check_ack(u8 *cmd, u8 len);
 
 void puthex(u8 *buf, u32 len);
@@ -149,9 +150,17 @@ u8 MifareReadBlock(u8 block, u8 *buf);
 u8 MifareAuthentication(
         u8 type, u8 block, u8 *uuid, u8 uuid_len, u8 *key);
 
+u8 PN_reset(void);
+
 u32 get_version(void);
 u8 InListPassiveTarget(u8 *buf, u8 brty, u8 maxtg, u8 *idata);
 u8 CiuRfConfiguration(u8 use_amp, u8 amp_gain, u8 rf_level);
 u8 SAMConfiguration(u8 mode, u8 timeout, u8 irq);
+
+u8 P2PInitiatorInit(void);
+u8 P2PInitiatorTxRx(u8 *t_buf, u8 t_len, u8 *r_buf, u8 *r_len);
+
+u8 P2PTargetInit(void);
+u8 P2PTargetTxRx(u8 *t_buf, u8 t_len, u8 *r_buf, u8 *r_len);
 
 #endif

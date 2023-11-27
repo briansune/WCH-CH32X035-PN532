@@ -1,10 +1,22 @@
 #include "debug.h"
 #include "nfc.h"
 
+//#define CARD_READ
+#define INIT_NFC
+//#define TARG_NFC
+
+#if(defined INIT_NFC || defined TARG_NFC)
+u8 tx_buf[50]="NFC INITIATOR0";
+u8 tx_len;
+u8 rx_buf[50];
+u8 rx_len;
+#endif
 
 int main(void){
 
-    u8 buf[32],sta;
+#ifdef CARD_READ
+    u8 buf[32], sta;
+#endif
 
     SystemCoreClockUpdate();
     Delay_Init();
@@ -14,7 +26,6 @@ int main(void){
 
     nfc_init();
     printf("PN532 Arduino Conversion\r\n");
-    read_ack();
 
     u32 versiondata = get_version();
 
@@ -30,13 +41,14 @@ int main(void){
     printf(".%d\r\n", (versiondata>>8) & 0xFF);
 
     u8 flag;
-    flag = CiuRfConfiguration(0, 4, 8);
+    flag = CiuRfConfiguration(1, 0, 12);
     printf("%d\r\n", flag);
 
     SAMConfiguration(PN532_SAM_NORMAL_MODE, 1, 0);
 
 	while(1){
 
+#ifdef CARD_READ
         /** Polling the mifar card, buf[0] is the length of the UID */
         sta = InListPassiveTarget(buf, PN532_BRTY_ISO14443A, 1, NULL);
 
@@ -96,5 +108,40 @@ int main(void){
         }
         }
         }
+#endif
+
+#ifdef INIT_NFC
+        if(P2PInitiatorInit()){
+            printf("Target is sensed.\r\n");
+
+            tx_buf[13] = 0x30;
+            u8 idx = 0;
+
+            tx_len = strlen((const char*)tx_buf);
+            while(P2PInitiatorTxRx(tx_buf, tx_len, rx_buf, &rx_len)){
+                printf("Data Received: ");
+                printf(rx_buf, rx_len);
+                printf("\r\n");
+                idx++;
+                tx_buf[13] = 0x30 + (idx % 10);
+            }
+            printf("\r\n");
+            Delay_Ms(3);
+        }
+#endif
+
+#ifdef TARG_NFC
+        if(P2PTargetInit()){
+            printf("Initiator is sensed.\r\n");
+            tx_len = strlen((const char *)tx_buf);
+            if(P2PTargetTxRx(tx_buf, tx_len, rx_buf, &rx_len)){
+                printf("Data Received: ");
+                printf(rx_buf, rx_len);
+                printf("\r\n");
+            }
+            printf("\r\n");
+        }
+#endif
+
 	}
 }
